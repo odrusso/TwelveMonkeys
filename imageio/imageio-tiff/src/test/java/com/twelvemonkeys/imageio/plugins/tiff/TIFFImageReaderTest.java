@@ -124,6 +124,7 @@ public class TIFFImageReaderTest extends ImageReaderAbstractTest<TIFFImageReader
                 new TestData(getClassLoaderResource("/tiff/fivepages-scan-causingerrors.tif"), new Dimension(2480, 3518)), // B/W, CCITT T4
                 new TestData(getClassLoaderResource("/tiff/CCITTgetNextChangingElement.tif"), new Dimension(2402,195)),
                 new TestData(getClassLoaderResource("/tiff/ccitt-too-many-changes.tif"), new Dimension(24,153)),
+                new TestData(getClassLoaderResource("/tiff/misnumbered.tif"), new Dimension(1656,2339)), // B/W, CCITT, with mis-numbered papers
                 // CIELab
                 new TestData(getClassLoaderResource("/tiff/ColorCheckerCalculator.tif"), new Dimension(798, 546)), // CIELab 8 bit/sample
                 // Gray
@@ -201,6 +202,28 @@ public class TIFFImageReaderTest extends ImageReaderAbstractTest<TIFFImageReader
         return Collections.singletonList("image/tiff");
     }
 
+
+    /**
+     * A tiff with misnumbered pages will render every 2nd line as blank
+     * This test compares against a corected TIF which has the correct TIFF pixels
+     */
+    @Test
+    public void testReadWithMisnumberedPage() throws IOException {
+        TestData expectedData = new TestData(getClassLoaderResource("/tiff/misnumbered.tif"), new Dimension(1656,2339));
+        TestData testData = new TestData(getClassLoaderResource("/tiff/misnumbered-corrected.tif"), new Dimension(1656,2339));
+
+        try (ImageInputStream expectedStream = expectedData.getInputStream(); ImageInputStream stream = testData.getInputStream()) {
+            TIFFImageReader reader = createReader();
+
+            reader.setInput(expectedStream);
+            BufferedImage expected = reader.read(0, null);
+
+            reader.setInput(stream);
+            BufferedImage actual = reader.read(0, null);
+
+            assertImageDataEquals("", expected, actual);
+        }
+    }
 
     @Test
     public void testReadWithSourceRegionParamEqualImageTiled() throws IOException {
